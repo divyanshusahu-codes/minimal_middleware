@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 // #include <ordered_map>
+#include <functional>
 #include <string>
 #include <thread>
 #include <typeindex>
@@ -55,15 +56,55 @@ public:
     output_type_map_.emplace(output_name, type_info);
   }
 
+  // a node should have its own pubs and subs and it should be a part of the
+  // node. can real time nodes do this? keep it simple for now... assume that it
+  // can.. we can add layers to make sure it doesnt later the intention here to
+  // have an "on event" way of delering things which can be non-DAC. But this
+  // will be non-realtime.. coz of dyanmic mem alloc.. for realtime thread, we
+  // can make this work by making a queue between pubs and subs
+
+  // for publsher.. we need a way to get the data? keep it simple, we first just
+  // get info... like what type its publishing
+
+  template <typename T>
+  void addPublisher(const std::string &publisher_name,
+                    std::type_index type_info, const T &default_values) {
+    pub_default_values_[publisher_name] = default_values;
+    pub_type_map_.emplace(publisher_name, type_info);
+  }
+
+  // for the sub, we need a callback function which we can call when we get the
+  // data. For the sub, we ned to fix the signature and make it a standard.
+  // smthing ike function<void(T*)>
+  // template <typename T>
+  // void addSubcriber(const std::string &publisher_name,
+  //                   std::type_index type_info,
+  //                   std::function<void(T *)> callback) {
+  //   pub_default_values_[publisher_name] = default_values;
+  //   pub_type_map_.emplace(publisher_name, type_info);
+  // }
+
   std::string getNodeName() const { return node_name_; };
 
 private:
   std::string node_name_;
   int freq_per_sec_;
+
+  // GRAPH
   std::unordered_map<std::string, std::any> input_default_values_;
   std::unordered_map<std::string, std::type_index> input_type_map_;
   std::unordered_map<std::string, std::any> output_default_values_;
   std::unordered_map<std::string, std::type_index> output_type_map_;
+  // GRAPH
+
+  //  pubs and subs use the same strategy
+  std::unordered_map<std::string, std::any> pub_default_values_;
+  std::unordered_map<std::string, std::type_index> pub_type_map_;
+  std::unordered_map<std::string, std::type_index> sub_type_map_;
+  // std::unordered_map<std::string, std::function> sub_type_map_; //NEED A
+  // CONTAIER TO STORE THE CALLBACK.. HOW?
+
+  // pubds and subs
 };
 
 // now will need to make an app that actually can register and run things
