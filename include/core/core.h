@@ -15,6 +15,10 @@
 #include <thread>
 #include <typeindex>
 #include <unordered_map>
+
+//lib includes
+#include <core/app.h>
+
 namespace core {
 #define ADD_INPUT(name, type, default_value)                                   \
   addInput(name, std::type_index(typeid(type)), default_value)
@@ -77,14 +81,14 @@ public:
   // data. For the sub, we ned to fix the signature and make it a standard.
   // smthing ike function<void(T*)>
   // template <typename T>
-  // void addSubcriber(const std::string &publisher_name,
+  // void addSubcriber(const std::string &subscriber_name,
   //                   std::type_index type_info,
   //                   std::function<void(T *)> callback) {
-  //   pub_default_values_[publisher_name] = default_values;
-  //   pub_type_map_.emplace(publisher_name, type_info);
+  //   sub_default_values_[publisher_name] = default_values;
+  //   sub_type_map_.emplace(publisher_name, type_info);
   // }
 
-  std::string getNodeName() const { return node_name_; };
+  inline std::string getNodeName() const { return node_name_; };
 
 private:
   std::string node_name_;
@@ -99,6 +103,7 @@ private:
 
   //  pubs and subs use the same strategy
   std::unordered_map<std::string, std::any> pub_default_values_;
+  std::unordered_map<std::string, std::any> sub_default_values_;
   std::unordered_map<std::string, std::type_index> pub_type_map_;
   std::unordered_map<std::string, std::type_index> sub_type_map_;
   // std::unordered_map<std::string, std::function> sub_type_map_; //NEED A
@@ -107,81 +112,6 @@ private:
   // pubds and subs
 };
 
-// now will need to make an app that actually can register and run things
-// for now it will be simple... they will register and the flow is only from one
-// node to other this class will have to be a singleton.. and will have to be
-// the manager
-
-class App {
-public:
-  // we keep it simple for now. Let them register nodes and run them in
-  // sequence. They will pass a pointer to the Node created? we need a better
-  // way?
-
-  static void registerNode(std::shared_ptr<Node> reg_node,
-                           const int &priority) {
-    std::cout << "REGISTERING THE NODE WITH NAME: " << reg_node->getNodeName()
-              << std::endl;
-
-    // add it to the map for now
-    // TODO: Multiple nodes at the same priority?
-    node_map_.emplace(priority, reg_node);
-  }
-
-  static void runGraph() {
-    // loop through the graph and run the nodes in priority
-    // lets do iterators?
-    // for now lets run it only 10 times and then end.. i know this is bad code
-    int num_iters = 10;
-    int curr_iters = 0;
-    std::cout << "initilalizing all nodes" << std::endl;
-
-    for (auto it = node_map_.begin(); it != node_map_.end(); it++) {
-      // run the ordered nodes
-      it->second->init();
-    };
-
-    std::cout << "stepping through all nodes" << std::endl;
-
-    while (curr_iters < num_iters) {
-      for (auto it = node_map_.begin(); it != node_map_.end(); it++) {
-        // run the ordered nodes
-        it->second->run();
-      };
-      curr_iters++;
-    };
-
-    // ideally this should be done on catching sigint or smthin
-    std::cout << "STOPPING all nodes" << std::endl;
-
-    // STOP all nodes
-    for (auto it = node_map_.begin(); it != node_map_.end(); it++) {
-      // run the ordered nodes
-      it->second->stop();
-    };
-
-    std::cout << "DESTROYING all nodes" << std::endl;
-
-    // STOP all nodes
-    for (auto it = node_map_.begin(); it != node_map_.end(); it++) {
-      // run the ordered nodes
-      it->second->destroy();
-    };
-  };
-
-private:
-  App() = default;
-
-  ~App(){};
-
-  // copy and move constuctors
-  //   App(const & App) = delete;
-  App(App &&) = delete;
-
-  // store the nodes and their sequence.. this is not inline need to make a
-  // defination or smthing
-  static std::map<int, std::shared_ptr<Node>> node_map_;
-};
 } // namespace core
 
 #endif

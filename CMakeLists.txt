@@ -25,6 +25,8 @@ include_directories(include)
 # Source files
 set(CORE_SOURCES
     src/core/core.cpp
+    src/core/utils.cpp
+    src/core/app.cpp
 )
 
 # Create core library
